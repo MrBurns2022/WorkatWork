@@ -1,0 +1,71 @@
+- name: update / create repository for aswvot
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  vars:
+    repository_path: "."
+    arch: "x86_64"
+    centos:
+      mirror: "rsync://mnvoip.mm.fcix.net"
+      #mirror: "rsync://mirror.sfo12.us.leaseweb.net"
+      version: "7.9.2009"
+      repos:
+        - "configmanagement/{{ arch }}/ansible-29/"
+        - "extras/"
+        - "os/"
+        - "updates/"
+        - "cloud/{{ arch }}/openstack-train/"
+        - "storage/{{ arch }}/gluster-10/"
+        - "storage/{{ arch }}/nfsganesha-28/"
+        - "storage/{{ arch }}/nfs-ganesha-28/"
+        - "storage/{{ arch }}/ceph-nautilus/"
+        - "virt/{{ arch }}/libvirt-latest/"
+        - "virt/{{ arch }}/kvm-common/"
+        - "isos/{{ arch }}/CentOS-7-{{ arch }}-Minimal-2009.iso"
+    git: 
+      - "https://rhel-stig"
+    firmware:
+      intel:
+        nuc-i5: "https://www.intel.com"
+        nuc-i5: "https://www.intel.com"
+        nuc-i5: "https://www.intel.com"
+      supermicro:
+        - SYS-2049U-TR4: "https://www.supermicro.com"
+        - SYS-8028B-COR4FT: "https://www.supermicro.com"
+      cisco:
+        - C3560: "https://www.cisco.com"
+        - C9300: "https://www.cisco.com"
+        - C9500: "https://www.cisco.com"
+
+  tasks:
+    - name: CentOS
+      block:
+        - name: create destination directories
+          ansible.builtin.file:
+            path: "{{ repository_path }}/centos/{{ centos.version }}/{{ item |dirname }}"
+            state: directory
+          loop: "{{ centos.repos }}"
+            
+        - name: sync from mirror
+          ansible.posix.synchronize:
+            mode: pull
+            src: "{{ centos.mirror }}/centos/{{ centos.version }}/{{ item }}"
+            dest: "{{ repository_path }}/centos/{{ centos.version }}/{{ item }}"
+            rsync_opts:
+              - "-avSHP"
+          loop: "{{ centos.repos }}"
+          register: sync
+
+      rescue:
+        - ansible.builtin.pause: 
+            prompt: "Unable to sync CentOS repository 'Ctrl-C + A' to quit, 'Enter' to proceed" 
+     
+    - name: Git Repos
+      block:
+        - name: sync git reposioties
+          debug:
+            msg: "howdy"
+    
+              #  - name: launch a firefox window for opening a web browser to download the cisco ios
+              #    ansible.builtin.command: "firefox https://software.cisco.com"
